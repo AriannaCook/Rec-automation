@@ -166,7 +166,7 @@ async function streamText(prompt, onChunk, onDone, onError) {
         'Content-Type': 'application/json',
         ...(apiKey ? { 'x-api-key': apiKey } : {}),
       },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify({ prompt, apiKey }),
       signal,
     });
 

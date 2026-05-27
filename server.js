@@ -45,7 +45,7 @@ app.post('/api/stream', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'No prompt provided.' });
 
-  const apiKey = req.headers['x-api-key'] || process.env.ANTHROPIC_API_KEY;
+  const apiKey = req.body.apiKey || req.headers['x-api-key'] || process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey) {
     res.setHeader('Content-Type', 'text/event-stream');
