@@ -149,7 +149,7 @@ function saveApiKey() {
   status.className = 'api-key-status ok';
 }
 
-// ── Streaming ──────────────────────────────────
+// ── Streaming — calls Anthropic API directly from browser ──
 
 async function streamText(prompt, onChunk, onDone, onError) {
   abortStream();
@@ -157,22 +157,36 @@ async function streamText(prompt, onChunk, onDone, onError) {
   const { signal } = streamAbort;
 
   const apiKey = getApiKey();
+  if (!apiKey) {
+    onError?.('No API key set. Enter your Anthropic API key in the sidebar.');
+    return '';
+  }
 
   let accumulated = '';
   try {
-    const resp = await fetch('/api/stream', {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        ...(apiKey ? { 'x-api-key': apiKey } : {}),
+        'content-type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
       },
-      body: JSON.stringify({ prompt, apiKey }),
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        stream: true,
+        messages: [{ role: 'user', content: prompt }],
+      }),
       signal,
     });
 
     if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ error: 'Request failed' }));
-      onError?.(err.error || 'Request failed');
+      const err = await resp.json().catch(() => ({}));
+      const msg = resp.status === 401
+        ? 'Invalid API key. Re-enter it in the sidebar.'
+        : err.error?.message || `API error ${resp.status}`;
+      onError?.(msg);
       return '';
     }
 
@@ -193,16 +207,11 @@ async function streamText(prompt, onChunk, onDone, onError) {
         if (data === '[DONE]') { onDone?.(accumulated); return accumulated; }
         try {
           const parsed = JSON.parse(data);
-          if (parsed.error) {
-            const msg = parsed.error === 'NO_KEY'
-              ? 'No API key set. Enter your Anthropic API key in the sidebar.'
-              : parsed.error;
-            onError?.(msg); return accumulated;
+          if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta') {
+            accumulated += parsed.delta.text;
+            onChunk?.(parsed.delta.text, accumulated);
           }
-          if (parsed.text) {
-            accumulated += parsed.text;
-            onChunk?.(parsed.text, accumulated);
-          }
+          if (parsed.type === 'message_stop') { onDone?.(accumulated); return accumulated; }
         } catch (_) {}
       }
     }
