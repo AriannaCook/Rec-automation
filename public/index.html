@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rec Automation</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </span>
+        <span class="sidebar-title">Rec Automation</span>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-section-header">
+          <span class="sidebar-section-label">Active Searches</span>
+          <button class="btn-icon-sm" id="addRoleBtn" title="Add new search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </div>
+        <ul class="roles-list" id="rolesList"></ul>
+      </div>
+    </aside>
+
+    <div class="content">
+      <nav class="stage-nav" id="stageNav">
+        <button class="stage-tab" data-stage="1">1 · Job Intake</button>
+        <button class="stage-tab" data-stage="2">2 · Boolean</button>
+        <button class="stage-tab" data-stage="3">3 · Screener</button>
+        <button class="stage-tab" data-stage="4">4 · Outreach</button>
+        <button class="stage-tab" data-stage="5">5 · Clarification</button>
+        <button class="stage-tab" data-stage="6">6 · Writeup</button>
+        <button class="stage-tab" data-stage="7">7 · Interview Prep</button>
+      </nav>
+      <div class="stage-content" id="stageContent"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
