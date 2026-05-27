@@ -114,6 +114,41 @@ function copyBtn(btn, text) {
   });
 }
 
+// ── API key ────────────────────────────────────
+
+function getApiKey() {
+  return localStorage.getItem('recAuto_apiKey') || '';
+}
+
+function initApiKey() {
+  const input = document.getElementById('apiKeyInput');
+  const saveBtn = document.getElementById('apiKeySave');
+  const status = document.getElementById('apiKeyStatus');
+
+  const saved = getApiKey();
+  if (input) {
+    input.value = saved;
+    if (saved) { status.textContent = 'Key saved'; status.className = 'api-key-status ok'; }
+  }
+
+  saveBtn?.addEventListener('click', () => saveApiKey());
+  input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveApiKey(); });
+}
+
+function saveApiKey() {
+  const input = document.getElementById('apiKeyInput');
+  const status = document.getElementById('apiKeyStatus');
+  const key = input?.value?.trim();
+  if (!key) {
+    status.textContent = 'Enter a key first';
+    status.className = 'api-key-status err';
+    return;
+  }
+  localStorage.setItem('recAuto_apiKey', key);
+  status.textContent = 'Key saved';
+  status.className = 'api-key-status ok';
+}
+
 // ── Streaming ──────────────────────────────────
 
 async function streamText(prompt, onChunk, onDone, onError) {
@@ -121,11 +156,16 @@ async function streamText(prompt, onChunk, onDone, onError) {
   streamAbort = new AbortController();
   const { signal } = streamAbort;
 
+  const apiKey = getApiKey();
+
   let accumulated = '';
   try {
     const resp = await fetch('/api/stream', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(apiKey ? { 'x-api-key': apiKey } : {}),
+      },
       body: JSON.stringify({ prompt }),
       signal,
     });
@@ -153,7 +193,12 @@ async function streamText(prompt, onChunk, onDone, onError) {
         if (data === '[DONE]') { onDone?.(accumulated); return accumulated; }
         try {
           const parsed = JSON.parse(data);
-          if (parsed.error) { onError?.(parsed.error); return accumulated; }
+          if (parsed.error) {
+            const msg = parsed.error === 'NO_KEY'
+              ? 'No API key set. Enter your Anthropic API key in the sidebar.'
+              : parsed.error;
+            onError?.(msg); return accumulated;
+          }
           if (parsed.text) {
             accumulated += parsed.text;
             onChunk?.(parsed.text, accumulated);
@@ -1515,6 +1560,9 @@ function init() {
     state.currentStage = 1;
     saveState();
   }
+
+  // API key
+  initApiKey();
 
   // Sidebar add button
   document.getElementById('addRoleBtn')?.addEventListener('click', addRole);

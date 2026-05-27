@@ -6,7 +6,6 @@ const Anthropic = require('@anthropic-ai/sdk');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -41,14 +40,16 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// Streaming endpoint — sends SSE chunks back to client
+// Streaming endpoint — API key comes from request header or falls back to env var
 app.post('/api/stream', async (req, res) => {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'No prompt provided.' });
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  const apiKey = req.headers['x-api-key'] || process.env.ANTHROPIC_API_KEY;
+
+  if (!apiKey) {
     res.setHeader('Content-Type', 'text/event-stream');
-    res.write(`data: ${JSON.stringify({ error: 'ANTHROPIC_API_KEY is not set. Add it to your .env file.' })}\n\n`);
+    res.write(`data: ${JSON.stringify({ error: 'NO_KEY' })}\n\n`);
     return res.end();
   }
 
@@ -57,6 +58,7 @@ app.post('/api/stream', async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
 
   try {
+    const anthropic = new Anthropic({ apiKey });
     const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
@@ -74,7 +76,7 @@ app.post('/api/stream', async (req, res) => {
   } catch (err) {
     console.error('Stream error:', err);
     const msg = err.status === 401
-      ? 'Invalid API key. Check your ANTHROPIC_API_KEY.'
+      ? 'Invalid API key. Check the key you entered in settings.'
       : err.message || 'Unknown error from Claude API.';
     res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
     res.end();
