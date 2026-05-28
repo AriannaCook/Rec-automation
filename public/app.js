@@ -39,7 +39,7 @@ function createRole(name = 'New Search') {
       4: { output: '', refineInput: '' },
       5: { candidateInput: '', output: '', refineInput: '' },
       6: {
-        inputs: { name: '', title: '', company: '', citizenship: '', comp: '', notes: '' },
+        inputs: { name: '', location: '', citizenship: '', comp: '', notes: '' },
         output: '', refineInput: '',
       },
       7: {
@@ -1015,18 +1015,14 @@ function s6html() {
           <input type="text" id="s6-name" placeholder="Jane Smith" value="${h(inp.name)}" />
         </div>
         <div class="field-group">
-          <label for="s6-title">Current Title</label>
-          <input type="text" id="s6-title" placeholder="Senior Product Manager" value="${h(inp.title)}" />
-        </div>
-        <div class="field-group">
-          <label for="s6-company">Current Company</label>
-          <input type="text" id="s6-company" placeholder="Acme Corp" value="${h(inp.company)}" />
+          <label for="s6-location">Location</label>
+          <input type="text" id="s6-location" placeholder="New York, NY" value="${h(inp.location)}" />
         </div>
         <div class="field-group">
           <label for="s6-citizenship">Citizenship Status</label>
           <input type="text" id="s6-citizenship" placeholder="US Citizen / GC / H-1B..." value="${h(inp.citizenship)}" />
         </div>
-        <div class="field-group field-full">
+        <div class="field-group">
           <label for="s6-comp">Compensation Expectation</label>
           <input type="text" id="s6-comp" placeholder="$180k base + equity" value="${h(inp.comp)}" />
         </div>
@@ -1063,7 +1059,7 @@ function s6html() {
 
 function s6listen() {
   const s = getStage(6);
-  const fields = ['name', 'title', 'company', 'citizenship', 'comp', 'notes'];
+  const fields = ['name', 'location', 'citizenship', 'comp', 'notes'];
   fields.forEach(f => {
     document.getElementById(`s6-${f}`)?.addEventListener('input', (e) => {
       s.inputs[f] = e.target.value; saveState();
@@ -1439,24 +1435,27 @@ ${profile}`;
 function promptS6(jd, inputs) {
   return `You are a recruiting consultant. Write a structured candidate presentation writeup.
 
-Return the writeup in this exact format:
-${inputs.name || '[Full Name]'}
-${inputs.title || '[Current Title]'} / ${inputs.company || '[Current Company]'}
+Return the writeup in this EXACT format — copy the field labels exactly, including the colon and spacing:
+
+Candidate Name: ${inputs.name || '[Full Name]'}
+Location: ${inputs.location || '[Location]'}
 Citizenship: ${inputs.citizenship || '[status]'}
 Compensation Expectation: ${inputs.comp || '[comp]'}
 
-- [bullet 1]
-- [bullet 2]
-- [bullet 3]
-- [bullet 4]
-- [bullet 5]
-- [bullet 6]
+Summary:
+•\t[bullet 1]
+•\t[bullet 2]
+•\t[bullet 3]
+•\t[bullet 4]
+•\t[bullet 5]
+•\t[bullet 6]
 
 Rules:
-- Exactly 6 bullets
-- Each bullet maps a specific aspect of their background to a role requirement
-- Factual and specific — no overselling, no vague claims
-- No em dashes
+- Exactly 6 bullets under "Summary:"
+- Each bullet maps a specific aspect of their background directly to a role requirement
+- Factual and specific — no overselling, no vague claims, no filler phrases
+- Each bullet should be a single punchy sentence (not a fragment, not multiple sentences)
+- No em dashes anywhere
 - No bold formatting
 - Return ONLY the writeup, nothing else
 
@@ -1465,8 +1464,7 @@ ${jd}
 
 Candidate details:
 Name: ${inputs.name}
-Current Title: ${inputs.title}
-Current Company: ${inputs.company}
+Location: ${inputs.location}
 Citizenship: ${inputs.citizenship}
 Compensation Expectation: ${inputs.comp}
 Call notes:
